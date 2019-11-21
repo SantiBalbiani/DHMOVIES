@@ -199,11 +199,10 @@ const theaters = [
 
 var pregFreq = '\n \n ​Recordá que podés visitar las secciones: \n i. En Cartelera \n ii. Más Votadas \n iii. Sucursales \n iv. Contacto \n v. Preguntas Frecuentes \n';
 
-// Usar []
-const concatenador = (resultado, tituloPelicula) => resultado + tituloPelicula + '\n';
-const getTitulosPelis = peliculas => peliculas.map ( peli => peli.title ).sort();
-const listarTitulosPelis = peliculas => getTitulosPelis(peliculas).reduce(concatenador);
-const pelisEnCartelera = peliculas => peliculas.filter ( peli => peli.release_date >= fechaCompl );
+const concatenador = (resultado, elem) => resultado + elem + '\n';
+const getElem = (peliculas, elem) => peliculas.map ( peli => peli[elem] ).sort();
+const listarPor = (elem, peliculas) => getElem(peliculas, elem).reduce(concatenador);
+const pelisEnCartelera = peliculas => peliculas.filter ( peli => (new Date(peli.release_date)) < fechaCompl );
 
 // Servidor
 http.createServer((req, res) => {
@@ -215,14 +214,14 @@ http.createServer((req, res) => {
 		case '/':
 		    res.write('​Bienvenidos a DH Movies el mejor sitio para encontrar las mejores películas, incluso mucho mejor que Netflix, Cuevana y PopCorn​. \n \n')
 		    res.write('\n Total de películas en cartelera​:' + movies.length + '\n  \n')
-			res.write(listarPelis(movies));
+			res.write(listarPor("title", movies));
 			res.write(pregFreq);
 			res.end(' ');
 			break;
 		// En cartelera
 		case '/en-cartelera':
-			res.write("Total de películas​: " + pelisEnCartelera(movies).length);
-			res.write(listarPelis(pelisEnCartelera(movies)));
+			res.write( "Total de películas​: " + pelisEnCartelera(movies).length + '\n  \n');
+			res.write(listarPor("title", pelisEnCartelera(movies)));
 			res.end('En cartelera');
 			break;
 		case '/mas-votadas':
