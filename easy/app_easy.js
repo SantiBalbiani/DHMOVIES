@@ -1,6 +1,9 @@
 const http = require('http');
 const fs = require('fs');
 
+const noPrintLabel = false;
+const PrintLabel = true;
+
 let fechaCompl = new Date();
 let dia = fechaCompl.getFullYear()+'-'+("0"+(new Date().getMonth()+1)).slice(-2)+'-'+("0"+new Date().getDate()).slice(-2);
 
@@ -198,11 +201,11 @@ const theaters = [
 ];
 
 var pregFreq = '\n \n ​Recordá que podés visitar las secciones: \n i. En Cartelera \n ii. Más Votadas \n iii. Sucursales \n iv. Contacto \n v. Preguntas Frecuentes \n';
-
-const concatenador = (resultado, elem) => resultado + elem + '\n';
-const getElem = (peliculas, elem) => peliculas.map ( peli => peli[elem] ).sort();
-const listarPor = (elem, peliculas) => getElem(peliculas, elem).reduce(concatenador);
 const pelisEnCartelera = peliculas => peliculas.filter ( peli => (new Date(peli.release_date)) < fechaCompl );
+const pelisRankingMayorA7 = peliculas => peliculas.filter ( peli => peli.vote_average >= 7);
+const ratingPromedioMasVotadas = pelisRankingMayorA7(movies).map( peli => peli.vote_average ).reduce ( (a, b) => a + b ) / pelisRankingMayorA7(movies).length;
+const concatPeli = (label, pel, ...elems) => elems.reduce( (acum, elem) => acum + (label? elem + ': ' : ' ')  + pel[elem] + '\n' , '\n');
+const listarPor = (label, peliculas, ...elems) => peliculas.map ( peli => concatPeli(label, peli, ...elems)).join('\n');
 
 // Servidor
 http.createServer((req, res) => {
@@ -210,22 +213,26 @@ http.createServer((req, res) => {
 	
 	// Route System
 	switch (req.url) {
-		// Home
 		case '/':
 		    res.write('​Bienvenidos a DH Movies el mejor sitio para encontrar las mejores películas, incluso mucho mejor que Netflix, Cuevana y PopCorn​. \n \n')
 		    res.write('\n Total de películas en cartelera​:' + movies.length + '\n  \n')
-			res.write(listarPor("title", movies));
+			res.write(listarPor( noPrintLabel,movies, "title"));
 			res.write(pregFreq);
 			res.end(' ');
 			break;
-		// En cartelera
 		case '/en-cartelera':
+			res.write("En Cartelera");
 			res.write( "Total de películas​: " + pelisEnCartelera(movies).length + '\n  \n');
-			res.write(listarPor("title", pelisEnCartelera(movies)));
+			res.write(listarPor(noPrintLabel, pelisEnCartelera(movies), "title"));
 			res.end('En cartelera');
 			break;
 		case '/mas-votadas':
-			res.end('Más Votadas');
+			res.write('Más Votadas');
+			res.write('Total de películas: ' + pelisRankingMayorA7(movies).length + '\n');
+			res.write('Rating Promedio: ' + ratingPromedioMasVotadas);
+			res.write('Listados de Peliculas: \n' + listarPor(PrintLabel, movies, "title", "vote_average", "overview"));
+			res.end(' ');
+
 			break;
 		case '/sucursales':
 			res.end('Sucursales');
